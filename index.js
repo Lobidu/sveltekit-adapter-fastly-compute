@@ -7,33 +7,28 @@ import { fileURLToPath } from 'url';
 
 /**
  * @typedef {{
- *   main: string;
- *   site: {
- *     bucket: string;
- *   }
- * }} WranglerConfig
+ *   manifest_version: number;
+ *   name: string;
+ *   language: "javascript";
+ * }} FastlyConfig
  */
 
-/** @type {import('.').default} */
-export default function () {
-	// TODO remove for 1.0
-	if (arguments.length > 0) {
-		throw new Error(
-			'esbuild options can no longer be passed to adapter-cloudflare-workers — see https://github.com/sveltejs/kit/pull/4639'
-		);
-	}
+const name = 'sveltekit-adapter-fastly-compute'
 
+/** @type {import('.').default} */
+export default function ({ outDir }) {
 	return {
-		name: '@sveltejs/adapter-cloudflare-workers',
+		name,
 
 		async adapt(builder) {
-			const { main, site } = validate_config(builder);
+			validate_config(builder);
+
+      const dir = outDir || 'build'
 
 			const files = fileURLToPath(new URL('./files', import.meta.url).href);
-			const tmp = builder.getBuildDirectory('cloudflare-workers-tmp');
+			const tmp = builder.getBuildDirectory(`.svelte-kit/${name}`);
 
-			builder.rimraf(site.bucket);
-			builder.rimraf(dirname(main));
+			builder.rimraf(dirname(dir));
 
 			builder.log.info('Installing worker dependencies...');
 			builder.copy(`${files}/_package.json`, `${tmp}/package.json`);
@@ -66,73 +61,59 @@ export default function () {
 				sourcemap: 'linked',
 				target: 'es2020',
 				entryPoints: [`${tmp}/entry.js`],
-				outfile: main,
+				outfile: dir,
 				bundle: true,
 				external: ['__STATIC_CONTENT_MANIFEST'],
 				format: 'esm'
 			});
 
 			builder.log.minor('Copying assets...');
-			builder.writeClient(site.bucket);
-			builder.writePrerendered(site.bucket);
+			builder.writeClient(dir);
+			builder.writePrerendered(dir);
 		}
 	};
 }
 
 /**
  * @param {import('@sveltejs/kit').Builder} builder
- * @returns {WranglerConfig}
+ * @returns {FastlyConfig}
  */
 function validate_config(builder) {
-	if (existsSync('wrangler.toml')) {
-		/** @type {WranglerConfig} */
-		let wrangler_config;
+	if (existsSync('fastly.toml')) {
+		/** @type {FastlyConfig} */
+		let fastly_config;
 
 		try {
-			wrangler_config = /** @type {WranglerConfig} */ (
-				toml.parse(readFileSync('wrangler.toml', 'utf-8'))
+      fastly_config = /** @type {FastlyConfig} */ (
+				toml.parse(readFileSync('fastly.toml', 'utf-8'))
 			);
 		} catch (err) {
-			err.message = `Error parsing wrangler.toml: ${err.message}`;
+			err.message = `Error parsing fastly.toml: ${err.message}`;
 			throw err;
 		}
 
-		if (!wrangler_config.site?.bucket) {
+		if (fastly_config.language !== 'javascript') {
 			throw new Error(
-				'You must specify site.bucket in wrangler.toml. Consult https://developers.cloudflare.com/workers/platform/sites/configuration'
+				'You must specify `language = "javascript"` in fastly.toml.'
 			);
 		}
 
-		if (!wrangler_config.main) {
-			throw new Error(
-				'You must specify main option in wrangler.toml. Consult https://github.com/sveltejs/kit/tree/master/packages/adapter-cloudflare-workers'
-			);
-		}
-
-		return wrangler_config;
+		return fastly_config;
 	}
-
-	builder.log.error(
-		'Consult https://developers.cloudflare.com/workers/platform/sites/configuration on how to setup your site'
-	);
 
 	builder.log(
 		`
-		Sample wrangler.toml:
-
-		name = "<your-site-name>"
-		account_id = "<your-account-id>"
-
-		main = "./.cloudflare/worker.js"
-		site.bucket = "./.cloudflare/public"
-
-		build.command = "npm run build"
-
-		compatibility_date = "2021-11-12"
-		workers_dev = true`
+		Sample fastly.toml:
+		
+    manifest_version = 2
+    service_id = "<your-service-id>"
+    name = "<your-site-name>"
+    description = "A SvelteKit project deployed on Fastly Compute@Edge"
+		authors = ["<your-name>"]
+    language = "javascript"`
 			.replace(/^\t+/gm, '')
 			.trim()
 	);
 
-	throw new Error('Missing a wrangler.toml file');
+	throw new Error('Missing a fastly.toml file');
 }

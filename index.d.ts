@@ -1,3 +1,7 @@
 import { Adapter } from '@sveltejs/kit';
 
-export default function plugin(): Adapter;
+interface adapterOptions {
+  outDir?: string;
+}
+
+export default function plugin(opts: adapterOptions): Adapter;
