@@ -6,7 +6,6 @@ Feel free to contribute!
 SvelteKit adapter that creates a Fastly Compute@Edge site using a function for 
 dynamic server rendering. Based on sveltekit's own `adapter-cloudflare-workers`
 
-**Requires [Wrangler v2](https://developers.cloudflare.com/workers/wrangler/get-started/).** Wrangler v1 is no longer supported.
 ## Usage
 
 Install with `npm i -D sveltekit-adapter-fastly-compute`, then add the adapter to your `svelte.config.js`:
