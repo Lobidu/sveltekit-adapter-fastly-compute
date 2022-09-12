@@ -16,14 +16,14 @@ import { fileURLToPath } from 'url';
 const name = 'sveltekit-adapter-fastly-compute'
 
 /** @type {import('.').default} */
-export default function ({ outDir }) {
+export default function (options) {
 	return {
 		name,
 
 		async adapt(builder) {
 			validate_config(builder);
 
-      const dir = outDir || 'build'
+      const dir = options?.outDir || 'build'
 
 			const files = fileURLToPath(new URL('./files', import.meta.url).href);
 			const tmp = builder.getBuildDirectory(`.svelte-kit/${name}`);
