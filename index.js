@@ -62,7 +62,7 @@ export default function (options) {
         sourcemap: 'linked',
         target: 'es2020',
         entryPoints: [`${tmp}/entry.js`],
-        outfile: 'entry.js',
+        outfile: '.fastly/entry.js',
         bundle: true,
         external: ['__STATIC_CONTENT_MANIFEST'],
         format: 'esm'
@@ -71,6 +71,8 @@ export default function (options) {
       builder.log.minor('Copying assets...');
       builder.writeClient(dir);
       builder.writePrerendered(dir);
+      const buildOut = execSync('fastly compute build', { cwd: tmp });
+      builder.log.info(buildOut.toString());
     }
   };
 }
