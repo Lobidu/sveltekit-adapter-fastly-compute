@@ -34,5 +34,8 @@
 	"devDependencies": {
 		"@types/node": "^16.11.36",
 		"typescript": "^4.8.2"
-	}
+	},
+  "peerDependencies": {
+    "@fastly/js-compute": "ˆ0.5.4"
+  }
 }
