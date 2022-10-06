@@ -48,6 +48,8 @@ export default function (options) {
         }
       });
 
+      builder.copy(`${files}/fastly.toml`, `${tmp}/fastly.toml`);
+
       writeFileSync(
         `${tmp}/manifest.js`,
         `export const manifest = ${builder.generateManifest({
